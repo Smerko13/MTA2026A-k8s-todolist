@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  template:
+    spec:
+      volumes:
+      - name: mariadb-data
+        emptyDir: null
+        persistentVolumeClaim:
+          claimName: backend-pvc

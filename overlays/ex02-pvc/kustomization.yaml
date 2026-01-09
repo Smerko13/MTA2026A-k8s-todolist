@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - pvc.yaml
+
+patches:
+  - path: backend-patch.yaml
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: todo-frontend
+      spec:
+        template:
+          spec:
+            containers:
+            - image: ghcr.io/bennyro-mta/todolist:1.8
+              name: todolist
+    target:
+      kind: Deployment
+      name: frontend
