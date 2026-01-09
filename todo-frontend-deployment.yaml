@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: frontend
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox:1.35
+        imagePullPolicy: IfNotPresent
+        command: ['sh', '-c']
+        args:
+        - |
+          echo "Waiting for database"
+          sleep 5
+          until nc -z $MYSQL_HOST 3306; do
+            echo "Database not ready yet"
+            sleep 3
+          done
+          echo "Database is ready!"
+        envFrom:
+        - configMapRef:
+            name: todolist-config-map
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "25m"
+          limits:
+            memory: "64Mi"
+            cpu: "50m"
+      containers:
+      - image: ghcr.io/bennyro-mta/todolist:1.5
+        name: todolist
+        envFrom:
+        - configMapRef:
+            name: todolist-config-map
+        env:
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: todolist-secret
+              key: MYSQL_ROOT_PASSWORD
+        - name: LOG_LEVEL
+          value: "ERROR"
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
