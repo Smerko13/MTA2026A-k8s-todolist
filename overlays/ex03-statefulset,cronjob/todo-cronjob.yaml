@@ -1,0 +1,40 @@
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backend-backup
+spec:
+  schedule: "0 2 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backend-backup
+              image: alpine:3.19
+              command:
+              - /bin/sh
+              - -c
+              - |
+                set -euo pipefail
+                DATE=$(date +%Y%m%d-%H%M)
+                DEST="/backup/${DATE}"
+                mkdir -p "${DEST}"
+                cp -a /var/lib/mysql "${DEST}/"
+              volumeMounts:
+              - name: backend-data
+                mountPath: /var/lib/mysql
+                readOnly: true
+              - name: backend-backup
+                mountPath: /backup
+          volumes:
+            - name: backend-data
+              persistentVolumeClaim:
+                claimName: backend-data-backend-0
+            - name: backend-backup
+              persistentVolumeClaim:
+                claimName: backend-backup-pvc

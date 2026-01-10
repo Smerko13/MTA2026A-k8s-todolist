@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - todo-cronjob.yaml
+  - todo-statefulset-backend.yaml
+  - todo-headless-service.yaml
+  - todo-backup-pvc.yaml
+  
+patches:
+  - patch: |-
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: todolist-config-map
+      data:
+        MYSQL_HOST: "backend-0.backend-headless"
+    target:
+      kind: ConfigMap
+      name: todolist-config-map
+  - patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: todo-frontend
+      spec:
+        template:
+          spec:
+            containers:
+            - image: ghcr.io/bennyro-mta/todolist:1.9
+              name: todolist
+    target:
+      kind: Deployment
+      name: frontend
